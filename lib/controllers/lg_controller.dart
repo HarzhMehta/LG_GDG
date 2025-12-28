@@ -147,6 +147,68 @@ class LGController {
     if (!isConnected) throw Exception('Not connected to LG');
     await query('exittour=true');
     await executeCommand('echo "" > /var/www/html/kmls.txt');
+
+    final logoScreen = firstScreen;
+    final blankKml = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document id="slave_$logoScreen">
+  </Document>
+</kml>''';
+    await _sshController.uploadString(blankKml, '/var/www/html/kml/slave_$logoScreen.kml');
+    await refreshView(screen: logoScreen);
+  }
+
+  Future<void> setRefresh() async {
+    if (!isConnected) throw Exception('Not connected to LG');
+
+    final pw = _settingsController.lgPassword;
+    final screenAmount = _settingsController.lgRigsNum;
+
+    const search = '<href>##LG_PHPIFACE##kml\\/slave_{{slave}}.kml<\\/href>';
+    const replace =
+        '<href>##LG_PHPIFACE##kml\\/slave_{{slave}}.kml<\\/href><refreshMode>onInterval<\\/refreshMode><refreshInterval>2<\\/refreshInterval>';
+
+    final command =
+        'echo $pw | sudo -S sed -i "s/$search/$replace/" ~/earth/kml/slave/myplaces.kml';
+    final clear =
+        'echo $pw | sudo -S sed -i "s/$replace/$search/" ~/earth/kml/slave/myplaces.kml';
+
+    for (var i = 2; i <= screenAmount; i++) {
+      final clearCmd = clear.replaceAll('{{slave}}', i.toString());
+      final cmd = command.replaceAll('{{slave}}', i.toString());
+
+      try {
+        await executeCommand('sshpass -p $pw ssh -t lg$i \'$clearCmd\'');
+        await executeCommand('sshpass -p $pw ssh -t lg$i \'$cmd\'');
+      } catch (e) {
+        debugPrint('Error setting refresh on lg\$i: \$e');
+      }
+    }
+    await reboot();
+  }
+
+  Future<void> resetRefresh() async {
+    if (!isConnected) throw Exception('Not connected to LG');
+
+    final pw = _settingsController.lgPassword;
+    final screenAmount = _settingsController.lgRigsNum;
+
+    const search =
+        '<href>##LG_PHPIFACE##kml\\/slave_{{slave}}.kml<\\/href><refreshMode>onInterval<\\/refreshMode><refreshInterval>2<\\/refreshInterval>';
+    const replace = '<href>##LG_PHPIFACE##kml\\/slave_{{slave}}.kml<\\/href>';
+
+    final clear =
+        'echo $pw | sudo -S sed -i "s/$search/$replace/" ~/earth/kml/slave/myplaces.kml';
+
+    for (var i = 2; i <= screenAmount; i++) {
+      final cmd = clear.replaceAll('{{slave}}', i.toString());
+      try {
+        await executeCommand('sshpass -p $pw ssh -t lg$i \'$cmd\'');
+      } catch (e) {
+        debugPrint('Error resetting refresh on lg\$i: \$e');
+      }
+    }
+    await reboot();
   }
 
   Future<void> relaunch() async {
@@ -225,6 +287,7 @@ class LGController {
 </kml>''';
 
     await sendKMLToSlave(firstScreen, logoKml);
+    await refreshView(screen: firstScreen);
   }
 
   Future<void> stopOrbit() async {
@@ -281,7 +344,7 @@ class LGController {
 </kml>''';
 
     await sendKMLToSlave(targetScreen, blankKml);
-    await query('exittour=true');
+    await refreshView(screen: targetScreen);
   }
 
   Future<void> refreshView({int? screen}) async {
@@ -292,10 +355,10 @@ class LGController {
         : _lastUpdatedKmlPath;
 
     if (targetPath != null) {
-      final current = await executeCommand('cat $targetPath');
-      await _sshController.uploadString(current, targetPath);
+      await executeCommand('touch $targetPath');
     }
 
+    await executeCommand('echo "" >> /var/www/html/kmls.txt');
     await query('exittour=false');
   }
 }

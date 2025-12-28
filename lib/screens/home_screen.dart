@@ -68,13 +68,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         logoScreenNumber: 3,
       );
       
-      // Execute lg-relaunch command via SSH
-      await widget.lgController.relaunch();
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Logo sent to left screen and lg-relaunch executed'),
+            content: Text('Logo sent to left screen'),
             backgroundColor: Colors.green,
           ),
         );
@@ -103,14 +100,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         logoScreenNumber: 3,
       );
       
-      // Execute lg-relaunch command via SSH
-      await widget.lgController.relaunch();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logo cleared'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _setupLiveUpdates() async {
+    try {
+      setState(() => _isLoading = true);
+      
+      await widget.lgController.setRefresh();
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Logo cleared and lg-relaunch executed'),
-            backgroundColor: Colors.orange,
+            content: Text('Live updates enabled (rebooting...)'),
+            backgroundColor: Colors.green,
           ),
         );
       }
