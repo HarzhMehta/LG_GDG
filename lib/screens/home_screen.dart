@@ -4,6 +4,14 @@ import '../controllers/ssh_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../controllers/lg_controller.dart';
 import 'settings_screen.dart';
+import '../widgets/custom_glass_card.dart';
+import '../widgets/neu_button.dart';
+import '../widgets/connection_status.dart';
+import '../widgets/entry_animation.dart';
+import 'send_kml_screen.dart';
+import 'update_safe_zone_screen.dart';
+import 'broadcast_advisory_screen.dart';
+import 'rescue_requests_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   final SSHController sshController;
@@ -68,27 +76,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         logoScreenNumber: 3,
       );
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logo sent to left screen'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      _showSuccess('Logo sent to left screen');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showError('Failed: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -100,58 +92,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         logoScreenNumber: 3,
       );
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logo cleared'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
+      _showSuccess('Logo cleared');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showError('Failed: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _setupLiveUpdates() async {
     try {
       setState(() => _isLoading = true);
-      
       await widget.lgController.setRefresh();
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Live updates enabled (rebooting...)'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      _showSuccess('Live updates enabled (rebooting...)');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showError('Failed: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
+  }
+
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   Future<void> _navigateToSettings() async {
@@ -173,208 +155,209 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Liquid Galaxy Controller'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _navigateToSettings,
-            tooltip: 'Settings',
+      body: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          gradient: RadialGradient(
+            center: Alignment.topLeft,
+            radius: 1.5,
+            colors: [
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
           ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _isConnected 
-                        ? [Colors.green.shade50, Colors.green.shade100]
-                        : [Colors.red.shade50, Colors.red.shade100],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isConnected ? Icons.check_circle : Icons.error,
-                        color: _isConnected ? Colors.green : Colors.red,
-                        size: 32,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isConnected ? 'Connected' : 'Disconnected',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: _isConnected ? Colors.green.shade900 : Colors.red.shade900,
-                              ),
-                            ),
-                            if (_isConnected)
-                              Text(
-                                'LG Master: ${widget.settingsController.lgHost}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.green.shade700,
-                                ),
-                              )
-                            else
-                              const Text(
-                                'Configure settings to connect',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (!_isConnected)
-                        ElevatedButton(
-                          onPressed: _navigateToSettings,
-                          child: const Text('Configure'),
-                        ),
-                    ],
-                  ),
-                ),
-
-                Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.1,
-                    children: [
-                      _buildControlButton(
-                        icon: Icons.image,
-                        label: 'Send Logo\n(Left Screen)',
-                        color: Colors.blue,
-                        onPressed: _isConnected
-                            ? _sendLogoToLeftScreen
-                            : null,
-                      ),
-                      _buildControlButton(
-                        icon: Icons.hide_image,
-                        label: 'Clear Logo\n(Left Screen)',
-                        color: Colors.purple,
-                        onPressed: _isConnected
-                            ? _clearLogoFromLeftScreen
-                            : null,
-                      ),
-                      _buildControlButton(
-                        icon: Icons.location_on,
-                        label: 'Send KML #1',
-                        color: Colors.green,
-                        onPressed: _isConnected
-                            ? () => widget.lgController.sendKml1()
-                            : null,
-                      ),
-                      _buildControlButton(
-                        icon: Icons.place,
-                        label: 'Send KML #2',
-                        color: Colors.orange,
-                        onPressed: _isConnected
-                            ? () => widget.lgController.sendKml2()
-                            : null,
-                      ),
-                      _buildControlButton(
-                        icon: Icons.cleaning_services,
-                        label: 'Clear All Logos',
-                        color: Colors.red.shade300,
-                        onPressed: _isConnected
-                            ? () => widget.lgController.clearLogos()
-                            : null,
-                      ),
-                      _buildControlButton(
-                        icon: Icons.clear_all,
-                        label: 'Clear KMLs',
-                        color: Colors.red,
-                        onPressed: _isConnected
-                            ? () => widget.lgController.clearKmls()
-                            : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback? onPressed,
-  }) {
-    final isEnabled = onPressed != null;
-    
-    return Material(
-      elevation: isEnabled ? 3 : 1,
-      borderRadius: BorderRadius.circular(16),
-      shadowColor: color.withValues(alpha: 0.4),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: isEnabled
-                ? LinearGradient(
-                    colors: [color.withValues(alpha: 0.8), color],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : LinearGradient(
-                    colors: [Colors.grey.shade300, Colors.grey.shade400],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-          ),
-          padding: const EdgeInsets.all(16),
+        ),
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 42,
-                color: isEnabled ? Colors.white : Colors.grey.shade500,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isEnabled ? Colors.white : Colors.grey.shade600,
-                  height: 1.2,
+              _buildHeader(),
+              Expanded(
+                child: SingleChildScrollView( // Allow scrolling on smaller screens
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Command Center',
+                        style: Theme.of(context).textTheme.displayMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Control your Liquid Galaxy rig from here.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 32),
+                      _buildControlGrid(),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.rocket_launch, 
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'LG CONTROLLER',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Text(
+                    'v1.0.0',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white38,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          ConnectionStatus(
+            isConnected: _isConnected,
+            label: _isConnected ? 'CONNECTED' : 'OFFLINE',
+            onSettingsPressed: _navigateToSettings,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControlGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Adapt grid count based on width
+        final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+        
+        final children = [
+          NeuButton(
+            icon: Icons.image,
+            label: 'Send Logo\n(Left Screen)',
+            color: const Color(0xFF3B82F6), // Blue
+            onPressed: _isConnected ? _sendLogoToLeftScreen : null,
+          ),
+          NeuButton(
+            icon: Icons.layers,
+            label: 'Send KML\nLayers',
+            color: const Color(0xFF8B5CF6), // Violet
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => SendKmlScreen(lgController: widget.lgController)),
+            ),
+          ),
+          NeuButton(
+            icon: Icons.add_location_alt,
+            label: 'Update\nSafe Zone',
+            color: const Color(0xFFF97316), // Orange
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UpdateSafeZoneScreen()),
+            ),
+          ),
+          NeuButton(
+            icon: Icons.warning_amber_rounded,
+            label: 'Broadcast\nAdvisory',
+            color: const Color(0xFFEAB308), // Amber
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BroadcastAdvisoryScreen()),
+            ),
+          ),
+          NeuButton(
+            icon: Icons.sos,
+            label: 'Rescue\nRequests',
+            color: const Color(0xFFDC2626), // Red
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => RescueRequestsScreen(lgController: widget.lgController)),
+            ),
+          ),
+          NeuButton(
+            icon: Icons.hide_image,
+            label: 'Clear Logo\n(Left Screen)',
+            color: const Color(0xFF8B5CF6), // Violet
+            onPressed: _isConnected ? _clearLogoFromLeftScreen : null,
+          ),
+          NeuButton(
+            icon: Icons.location_on,
+            label: 'Send KML #1\n(Reorbit)',
+            color: const Color(0xFF10B981), // Emerald
+            onPressed: _isConnected ? () => widget.lgController.sendKml1() : null,
+          ),
+          NeuButton(
+            icon: Icons.place,
+            label: 'Send KML #2\n(City Tour)',
+            color: const Color(0xFFF59E0B), // Amber
+            onPressed: _isConnected ? () => widget.lgController.sendKml2() : null,
+          ),
+          NeuButton(
+            icon: Icons.cleaning_services,
+            label: 'Clean Logos\n(All Screens)',
+            color: const Color(0xFFEF4444), // Red
+            onPressed: _isConnected ? () => widget.lgController.clearLogos() : null,
+          ),
+          NeuButton(
+            icon: Icons.clear_all,
+            label: 'Clean KMLs\n(Reset Earth)',
+            color: const Color(0xFFEC4899), // Pink
+            onPressed: _isConnected ? () => widget.lgController.clearKmls() : null,
+          ),
+          NeuButton(
+            icon: Icons.refresh,
+            label: 'Relaunch\n(Reboot LG)',
+            color: const Color(0xFF06B6D4), // Cyan
+            onPressed: _isConnected ? _setupLiveUpdates : null,
+          ),
+          NeuButton(
+            icon: Icons.settings,
+            label: 'Settings\n(Configure)',
+            color: Colors.grey,
+            onPressed: _navigateToSettings,
+          ),
+        ];
+
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.0, 
+          children: List.generate(children.length, (index) {
+            return EntryAnimation(
+              index: index,
+              child: children[index],
+            );
+          }),
+        );
+      }
     );
   }
 }
