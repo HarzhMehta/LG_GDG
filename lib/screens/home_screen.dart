@@ -305,18 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: const Color(0xFF8B5CF6), // Violet
             onPressed: _isConnected ? _clearLogoFromLeftScreen : null,
           ),
-          NeuButton(
-            icon: Icons.location_on,
-            label: 'Send KML #1\n(Reorbit)',
-            color: const Color(0xFF10B981), // Emerald
-            onPressed: _isConnected ? () => widget.lgController.sendKml1() : null,
-          ),
-          NeuButton(
-            icon: Icons.place,
-            label: 'Send KML #2\n(City Tour)',
-            color: const Color(0xFFF59E0B), // Amber
-            onPressed: _isConnected ? () => widget.lgController.sendKml2() : null,
-          ),
+
           NeuButton(
             icon: Icons.cleaning_services,
             label: 'Clean Logos\n(All Screens)',

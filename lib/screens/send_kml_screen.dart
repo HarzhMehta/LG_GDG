@@ -139,7 +139,7 @@ class _SendKmlScreenState extends State<SendKmlScreen> {
                     crossAxisCount: 2, // 2 columns for visibility
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 1.2,
+                    childAspectRatio: 0.95,
                   ),
                   itemCount: _layers.length,
                   itemBuilder: (context, index) {
