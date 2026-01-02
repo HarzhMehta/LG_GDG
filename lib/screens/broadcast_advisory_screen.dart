@@ -13,11 +13,52 @@ class _BroadcastAdvisoryScreenState extends State<BroadcastAdvisoryScreen> {
   bool _isSending = false;
   bool _isActive = false;
   String? _lastPostedMessage;
+  String _selectedAdvisoryType = 'Information';
+  
+  final List<String> _advisoryTypes = ['Information', 'Warning', 'Evacuation', 'All Clear'];
 
   @override
   void dispose() {
     _messageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _confirmAndSend() async {
+    if (_messageController.text.isEmpty) return;
+
+    final shouldSend = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Confirm Broadcast', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Type: $_selectedAdvisoryType', style: const TextStyle(color: Colors.amber)),
+            const SizedBox(height: 8),
+            Text('Message: "${_messageController.text}"', style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 16),
+            const Text('This will be sent immediately to all citizens.', style: TextStyle(color: Colors.white54, fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber.shade700, foregroundColor: Colors.black),
+            child: const Text('Confirm Broadcast'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSend == true) {
+      _sendAdvisory();
+    }
   }
 
   Future<void> _sendAdvisory() async {
@@ -147,6 +188,7 @@ class _BroadcastAdvisoryScreenState extends State<BroadcastAdvisoryScreen> {
                 ),
                 const SizedBox(height: 32),
                 
+                // Active Advisory Status Card
                 if (_isActive && _lastPostedMessage != null) ...[
                   Container(
                     width: double.infinity,
@@ -164,7 +206,7 @@ class _BroadcastAdvisoryScreenState extends State<BroadcastAdvisoryScreen> {
                           children: [
                             const Icon(Icons.podcasts, color: Colors.amber, size: 20),
                             const SizedBox(width: 8),
-                            Text('LIVE BROADCAST', style: TextStyle(color: Colors.amber.shade400, fontWeight: FontWeight.bold)),
+                            Text('LIVE BROADCAST • $_selectedAdvisoryType'.toUpperCase(), style: TextStyle(color: Colors.amber.shade400, fontWeight: FontWeight.bold)),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -177,8 +219,28 @@ class _BroadcastAdvisoryScreenState extends State<BroadcastAdvisoryScreen> {
                   ),
                 ],
 
+                // New Advisory Input Section
                 Text('New Message', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary)),
                 const SizedBox(height: 12),
+                
+                // Advisory Type Dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedAdvisoryType,
+                  dropdownColor: const Color(0xFF1E1E1E),
+                   decoration: InputDecoration(
+                    labelText: 'Advisory Type', // Added Label
+                    prefixIcon: const Icon(Icons.category, color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05), // Matches input field
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none), // Matches input field
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.amber.shade500)),
+                   ),
+                  items: _advisoryTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Colors.white)))).toList(),
+                  onChanged: (v) => setState(() => _selectedAdvisoryType = v!),
+                ),
+                const SizedBox(height: 16),
+
                 TextField(
                   controller: _messageController,
                   maxLength: _charLimit,
@@ -203,21 +265,35 @@ class _BroadcastAdvisoryScreenState extends State<BroadcastAdvisoryScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: _isSending || !_isActive ? null : _clearAdvisory,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: BorderSide(color: _isActive ? Colors.red.shade400 : Colors.grey.withOpacity(0.2)),
-                          foregroundColor: Colors.red.shade400,
-                        ),
-                        child: Text(_isSending ? '...' : 'Clear Advisory'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          OutlinedButton(
+                            onPressed: _isSending || !_isActive ? null : _clearAdvisory,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: BorderSide(color: _isActive ? Colors.red.shade400 : Colors.grey.withOpacity(0.2)),
+                              foregroundColor: Colors.red.shade400,
+                            ),
+                            child: Text(_isSending ? '...' : 'Clear Active Advisory'),
+                          ),
+                           if (_isActive)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'Removes the current advisory from citizen applications.',
+                                style: TextStyle(color: Colors.white38, fontSize: 10),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       flex: 2,
                       child: ElevatedButton.icon(
-                        onPressed: _isSending ? null : _sendAdvisory,
+                        onPressed: _isSending ? null : _confirmAndSend,
                         icon: const Icon(Icons.send),
                         label: Text(_isSending ? 'Broadcasting...' : 'Broadcast Now'),
                         style: ElevatedButton.styleFrom(

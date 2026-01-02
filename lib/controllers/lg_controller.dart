@@ -186,6 +186,76 @@ class LGController {
     
     // Fly to location
     await query('flytoview=<LookAt><longitude>$lng</longitude><latitude>$lat</latitude><range>1000</range><tilt>60</tilt><heading>0</heading></LookAt>');
+    await query('flytoview=<LookAt><longitude>$lng</longitude><latitude>$lat</latitude><range>1000</range><tilt>60</tilt><heading>0</heading></LookAt>');
+  }
+
+  Future<void> sendAreaSummary({
+    required String areaName,
+    required double lat,
+    required double lng,
+    required int count,
+    required String priority,
+  }) async {
+    if (!isConnected) throw Exception('Not connected to LG');
+
+    String colorHex;
+    double scale;
+    
+    // Determine color and size
+    switch (priority) {
+      case 'High':
+        colorHex = '990000ff'; // Red with transparency
+        scale = 3.0 + (count * 0.2);
+        break;
+      case 'Medium':
+        colorHex = '9900a5ff'; // Orange with transparency
+        scale = 2.0 + (count * 0.1);
+        break;
+      case 'Low':
+      default:
+        colorHex = '9900ffff'; // Yellow with transparency
+        scale = 1.5 + (count * 0.05);
+        break;
+    }
+
+    final kml = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Area Summary: $areaName</name>
+    <Style id="area_style">
+      <IconStyle>
+        <scale>$scale</scale>
+        <Icon>
+           <href>http://maps.google.com/mapfiles/kml/shapes/donut.png</href>
+        </Icon>
+        <color>$colorHex</color>
+      </IconStyle>
+      <LabelStyle>
+        <scale>1.5</scale>
+      </LabelStyle>
+    </Style>
+    <Placemark>
+      <name>$areaName ($count SOS)</name>
+      <description>Priority: $priority</description>
+      <styleUrl>#area_style</styleUrl>
+      <Point>
+        <coordinates>$lng,$lat,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>''';
+
+    const fileName = 'area_summary.kml';
+    const remotePath = '/var/www/html/$fileName';
+    
+    await _sshController.uploadString(kml, remotePath);
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    final url = 'http://${_settingsController.lgHost}:81/$fileName';
+    await executeCommand("grep -qF '$url' /var/www/html/kmls.txt || echo '\n$url' >> /var/www/html/kmls.txt");
+    
+    // Fly to view
+    await query('flytoview=<LookAt><longitude>$lng</longitude><latitude>$lat</latitude><range>3000</range><tilt>45</tilt><heading>0</heading></LookAt>');
   }
 
   Future<void> clearKmls({bool keepLogos = true}) async {

@@ -17,10 +17,16 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
   final _notesController = TextEditingController();
   
   String _selectedType = 'Relief Camp';
-  bool _isActive = true;
+  String _selectedCategory = 'Primary Shelter';
+  String _operationalStatus = 'Open';
+  bool _isVisibleToPublic = true;
   bool _isSaving = false;
+  // 0: None, 1: Auto-Detect, 2: Map Pick
+  int _locationSource = 0; 
 
   final List<String> _types = ['Relief Camp', 'Shelter', 'Hospital', 'Assembly Point'];
+  final List<String> _categories = ['Primary Shelter', 'Temporary Shelter', 'Medical Facility', 'Assembly Point'];
+  final List<String> _operationalStatuses = ['Open', 'Temporarily Closed', 'Full'];
 
   @override
   void dispose() {
@@ -36,6 +42,7 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
     setState(() {
       _latController.text = '10.1071';
       _lngController.text = '76.3636';
+      _locationSource = 1; // Auto-Detect
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,11 +146,21 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
                           onChanged: (v) => setState(() => _selectedType = v!),
                         ),
                         const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCategory,
+                          dropdownColor: const Color(0xFF1E1E1E),
+                          decoration: _inputDecoration('Category', Icons.category_outlined),
+                          items: _categories.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                          onChanged: (v) => setState(() => _selectedCategory = v!),
+                        ),
+
+                        const SizedBox(height: 16),
                         _buildTextField(
                           controller: _capacityController,
-                          label: 'Capacity',
+                          label: 'Capacity (People)',
                           icon: Icons.people,
                           keyboardType: TextInputType.number,
+                          helperText: 'Estimated maximum occupancy',
                         ),
                       ],
                     ),
@@ -190,6 +207,9 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
                                    ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Map Picker: Tap safely on simulating map')),
                                   );
+                                  setState(() {
+                                    _locationSource = 2; // Map Pick
+                                  });
                                 },
                                 icon: const Icon(Icons.pin_drop),
                                 label: const Text('Pick on Map'),
@@ -200,24 +220,77 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
                             ),
                           ],
                         ),
+                        if (_locationSource > 0) ...[
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: (_locationSource == 1 ? Colors.blue : Colors.orange).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: (_locationSource == 1 ? Colors.blue : Colors.orange).withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _locationSource == 1 ? Icons.auto_awesome : Icons.pin_drop,
+                                  size: 16,
+                                  color: _locationSource == 1 ? Colors.blue : Colors.orange,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _locationSource == 1 
+                                      ? 'Location set via Auto-Detect' 
+                                      : 'Location selected on Map',
+                                  style: TextStyle(
+                                    color: _locationSource == 1 ? Colors.blue : Colors.orange,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: _isActive ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
                     ),
-                    child: SwitchListTile(
-                      value: _isActive,
-                      onChanged: (v) => setState(() => _isActive = v),
-                      title: Text('Status: ${_isActive ? "Active" : "Inactive"}'),
-                      subtitle: Text(_isActive ? 'Visible to public' : 'Hidden from public'),
-                      activeColor: Colors.green,
-                      contentPadding: EdgeInsets.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Status', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary)),
+                        const SizedBox(height: 16),
+                         DropdownButtonFormField<String>(
+                            value: _operationalStatus,
+                            dropdownColor: const Color(0xFF1E1E1E),
+                            decoration: _inputDecoration('Operational Status', Icons.info_outline),
+                            items: _operationalStatuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                            onChanged: (v) => setState(() => _operationalStatus = v!),
+                          ),
+                          const SizedBox(height: 16),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Visible to Public', style: TextStyle(color: Colors.white)),
+                            subtitle: Text(
+                              _isVisibleToPublic ? 'Visible on citizen apps' : 'Hidden (Authority only)',
+                              style: const TextStyle(color: Colors.white54),
+                            ),
+                            value: _isVisibleToPublic,
+                            activeColor: Colors.green,
+                            onChanged: (val) => setState(() => _isVisibleToPublic = val),
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -237,6 +310,22 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
                         : const Text('SAVE & SYNC', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     ),
                   ),
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          'Last updated by: Admin',
+                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Last updated at: ${DateTime.now().toString().split('.')[0]}',
+                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.white38),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -252,13 +341,14 @@ class _UpdateSafeZoneScreenState extends State<UpdateSafeZoneScreen> {
     required IconData icon,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    String? helperText,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
       style: const TextStyle(color: Colors.white),
-      decoration: _inputDecoration(label, icon),
+      decoration: _inputDecoration(label, icon).copyWith(helperText: helperText, helperStyle: const TextStyle(color: Colors.white38)),
     );
   }
 
