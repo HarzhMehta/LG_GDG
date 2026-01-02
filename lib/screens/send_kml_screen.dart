@@ -18,56 +18,70 @@ class _SendKmlScreenState extends State<SendKmlScreen> {
       'title': 'Before Flood',
       'subtitle': 'Baseline View',
       'icon': Icons.water_drop_outlined,
-      'path': 'assets/kmls/forecast_baseline.kml',
+      'path': 'assets/kml files/kerala_before_flood.kml',
       'color': Colors.green
     },
     {
       'title': 'After Flood',
       'subtitle': 'Inundated Areas',
       'icon': Icons.flood,
-      'path': 'assets/kmls/forecast_inundation.kml',
+      'path': 'assets/kml files/kerala_after_flood_inundation.kml',
       'color': Colors.blue
     },
     {
       'title': 'Rainfall Severity',
       'subtitle': 'Precipitation Zones',
       'icon': Icons.cloudy_snowing,
-      'path': 'assets/kmls/rainfall.kml',
+      'path': 'assets/kml files/kerala_rainfall_severity.kml',
       'color': Colors.indigo
     },
     {
       'title': 'Vegetation Damage',
       'subtitle': 'Crop Impact',
       'icon': Icons.grass,
-      'path': 'assets/kmls/vegetation.kml',
+      'path': 'assets/kml files/kerala_vegetation_agriculture_loss.kml',
       'color': Colors.lightGreen
     },
     {
       'title': 'Household Impact',
       'subtitle': 'Affected Areas',
       'icon': Icons.house,
-      'path': 'assets/kmls/household.kml',
+      'path': 'assets/kml files/kerala_household_impact.kml',
       'color': Colors.orange
     },
     {
       'title': 'Urban Hotspots',
       'subtitle': 'Critical Zones',
       'icon': Icons.apartment,
-      'path': 'assets/kmls/urban_hotspots.kml',
+      'path': 'assets/kml files/kerala_urban_flood_hotspots.kml',
       'color': Colors.red
     },
     {
       'title': 'Safe Zones',
       'subtitle': 'Relief Camps',
       'icon': Icons.health_and_safety,
-      'path': 'assets/kmls/safe_zones.kml',
+      'path': 'assets/kml files/kerala_safe_zones_relief.kml',
       'color': Colors.teal
+    },
+    {
+      'title': 'Basin Impact',
+      'subtitle': 'River Analysis',
+      'icon': Icons.landscape,
+      'path': 'assets/kml files/kerala_river_basin_impact.kml',
+      'color': Colors.cyan
+    },
+    {
+      'title': 'Rescue Requests',
+      'subtitle': 'Emergency Calls',
+      'icon': Icons.sos,
+      'path': 'assets/kml files/kerala_rescue_requests.kml',
+      'color': Colors.redAccent
     },
     {
       'title': 'Start Tour',
       'subtitle': 'Disaster Overview',
       'icon': Icons.movie_filter,
-      'path': 'assets/kmls/tour.kml',
+      'path': 'assets/kml files/kerala_disaster_tour.kml',
       'color': Colors.purple
     },
   ];
