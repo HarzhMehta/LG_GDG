@@ -99,6 +99,30 @@ class LGController {
     await executeCommand('echo "$content" > /tmp/query.txt');
   }
 
+  Future<void> sendKeralaKml(int id) async {
+    if (!isConnected) throw Exception('Not connected to LG');
+
+    String fileName;
+    switch (id) {
+      case 1: fileName = '1_kerala_before_flood.kml'; break;
+      case 2: fileName = '2_kerala_after_flood_extent.kml'; break;
+      case 3: fileName = '3_kerala_rainfall_severity.kml'; break;
+      case 4: fileName = '4_kerala_river_basin_impact.kml'; break;
+      case 5: fileName = '5_kerala_household_impact.kml'; break;
+      case 6: fileName = '6_kerala_vegetation_agriculture_loss.kml'; break;
+      case 7: fileName = '7_kerala_urban_flood_hotspots.kml'; break;
+      case 8: fileName = '8_kerala_safe_zones_relief.kml'; break;
+      case 9: fileName = '9_kerala_disaster_tour.kml'; break;
+      default: return;
+    }
+
+    await _sshController.uploadAsset('assets/test 2/$fileName', '/var/www/html/$fileName');
+    await Future.delayed(const Duration(milliseconds: 300));
+    await executeCommand("echo '\nhttp://${_settingsController.lgHost}:81/$fileName' > /var/www/html/kmls.txt");
+    await Future.delayed(const Duration(milliseconds: 300));
+    await query('flytoview=<LookAt><longitude>76.4</longitude><latitude>10.1</latitude><range>600000</range><tilt>0</tilt><heading>0</heading></LookAt>');
+  }
+
   Future<void> sendKml1() async {
     if (!isConnected) throw Exception('Not connected to LG');
 
@@ -106,7 +130,7 @@ class LGController {
     await Future.delayed(const Duration(milliseconds: 300));
     await executeCommand("echo '\nhttp://${_settingsController.lgHost}:81/kml1.kml' > /var/www/html/kmls.txt");
     await Future.delayed(const Duration(milliseconds: 300));
-    await query('flytoview=<LookAt><longitude>-77.058654</longitude><latitude>38.872036</latitude><range>2000</range><tilt>60</tilt><heading>0</heading></LookAt>');
+    await query('flytoview=<LookAt><longitude>76.4</longitude><latitude>10.1</latitude><range>600000</range><tilt>0</tilt><heading>0</heading></LookAt>');
   }
 
   Future<void> sendKml2() async {
@@ -360,5 +384,73 @@ class LGController {
 
     await executeCommand('echo "" >> /var/www/html/kmls.txt');
     await query('exittour=false');
+  }
+
+  Future<void> sendDisasterLayer({required String assetPath}) async {
+    if (!isConnected) throw Exception('Not connected to LG');
+    
+    try {
+      // Extract filename from path (e.g., 'assets/test 2/1_kerala_before_flood.kml' -> '1_kerala_before_flood.kml')
+      final fileName = assetPath.split('/').last;
+      final remotePath = '/var/www/html/$fileName';
+      
+      // Create directory first via SSH command to ensure it exists for SFTP
+      await executeCommand('mkdir -p /var/www/html && chmod 755 /var/www/html');
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Upload asset file to LG
+      await _sshController.uploadAsset(assetPath, remotePath);
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Add the KML to kmls.txt for display using append
+      await executeCommand("echo '\nhttp://${_settingsController.lgHost}:81/$fileName' >> /var/www/html/kmls.txt");
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Fly to Kerala region to view the layer
+      await query('flytoview=<LookAt><longitude>76.4</longitude><latitude>10.1</latitude><range>500000</range><tilt>45</tilt><heading>0</heading></LookAt>');
+      
+      if (kDebugMode) {
+        debugPrint('Successfully sent disaster layer: $fileName');
+      }
+    } catch (e) {
+      debugPrint('Error sending disaster layer: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> sendRescueMarker(double lat, double lng) async {
+    if (!isConnected) throw Exception('Not connected to LG');
+    
+    final rescueKml = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <name>Rescue Location</name>
+      <Point>
+        <coordinates>$lng,$lat,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>''';
+    
+    await query('flytoview=<LookAt><longitude>$lng</longitude><latitude>$lat</latitude><range>10000</range><tilt>45</tilt><heading>0</heading></LookAt>');
+  }
+
+  Future<void> sendAreaSummary({required double lat, required double lng, required String areaName}) async {
+    if (!isConnected) throw Exception('Not connected to LG');
+    
+    final areaSummaryKml = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <name>$areaName</name>
+      <Point>
+        <coordinates>$lng,$lat,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>''';
+    
+    await query('flytoview=<LookAt><longitude>$lng</longitude><latitude>$lat</latitude><range>50000</range><tilt>30</tilt><heading>0</heading></LookAt>');
   }
 }
