@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'theme/app_theme.dart';
 import 'controllers/ssh_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/lg_controller.dart';
@@ -45,17 +46,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'LG Controller',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      ),
+      theme: AppTheme.darkTheme,
       home: HomeScreen(
         sshController: sshController,
         settingsController: settingsController,
